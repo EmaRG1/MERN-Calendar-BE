@@ -46,18 +46,84 @@ const createEvent = async (req, res = response) => {
   
 }
 
-const updateEvent = (req, res = response) => {
-  res.json({
-    ok: true,
-    msg: 'updateEvent'
-  })
+const updateEvent = async(req, res = response) => {
+
+  const eventID = req.params.id
+  const uid = req.uid
+
+  try {
+    
+    const eventToUpdate = await Event.findById(eventID)
+    if (!eventToUpdate) {
+      return res.status(404).json({
+        ok: false,
+        msg: 'Event not found'
+      })
+    }
+
+    if (eventToUpdate.user.toString() !== uid) {
+      return res.status(401).json({
+        ok: false,
+        msg: 'Bad Request'
+      })
+    }
+
+    const newEventData = {
+      ...req.body,
+      user: uid
+    }
+
+    const updatedEvent = await Event.findByIdAndUpdate(eventID, newEventData,{returnDocument: 'after'})
+    
+    res.json({
+      ok: true,
+      updatedEvent
+    })
+    
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      ok: false,
+      msg: 'Failed to update event'
+    })
+  }
 }
 
-const deleteEvent = (req, res = response) => {
-  res.json({
-    ok: true,
-    msg: 'deleteEvent'
-  })
+const deleteEvent = async (req, res = response) => {
+  
+  const eventID = req.params.id
+  const uid = req.uid
+
+  try {
+
+    const eventToDelete = await Event.findById(eventID)
+    if (!eventToDelete) {
+      return res.status(404).json({
+        ok: false,
+        msg: 'Event not found'
+      })
+    }
+
+    if (eventToDelete.user.toString() !== uid) {
+      return res.status(401).json({
+        ok: false,
+        msg: 'Failed to delete event'
+      })
+    }
+
+    await Event.deleteOne(eventToDelete)
+
+    res.json({
+      ok: true,
+      msg: 'Event deleted succesfully'
+    })
+  } catch (error) {
+    console.log(error)
+    res.status(500).json({
+      ok: false,
+      msg: 'Failed to delete event'
+    })
+  }
 }
 
 module.exports = {
